@@ -12,15 +12,20 @@ class UserController extends Controller
     public function search(Request $request)
     {
         $query = $request->input('query');
-        $users = User::where('name', 'like', '%' . $query . '%')->get();
-        $posts = Post::where('title', 'like', '%' . $query . '%')->get();
-        $comments = Comment::where('content', 'like', '%' . $query . '%')->get();
 
-        return response()->json([
-            'users' => $users,
-            'posts' => $posts,
-            'comments' => $comments,
-        ]);
+        $userIdsByName = User::where('name', 'like', '%' . $query . '%')->pluck('id')->toArray();
+
+
+        $postUserIds = Post::where('title', 'like', '%' . $query . '%')->pluck('user_id')->toArray();
+        $commentUserIds = Comment::where('content', 'like', '%' . $query . '%')->pluck('user_id')->toArray();
+
+
+        $userIds = array_unique(array_merge($userIdsByName, $postUserIds, $commentUserIds));
+
+        $users = User::whereIn('id', $userIds)->get();
+
+
+        return response()->json($users);
     }
 
     public function show(User $user)
